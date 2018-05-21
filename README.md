@@ -33,5 +33,5 @@ python mmav.py
 python3 mmav.py
 ```
 
-请享受！<br>
-(Enjoy!)
+请享♂受！并注意补充营养#(滑稽)<br>
+(Please enjoy! And pay attention to dietary nutrition.)
