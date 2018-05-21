@@ -102,3 +102,8 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# Custom
+下载保存目录/
+*.geany
+*.json
