@@ -1,7 +1,7 @@
 # MaoMiAV_Pics_Downloader
 
 一个使用Python语言编写的方便下载猫咪AV图片的工具<br>
-(A simple tool to easily download MaomiAV's pictures in Python)
+(A simple tool to easily download MaoMiAV's pictures in Python)
 
 此程序需要Python 3.5+版本<br>
 (This program requires the Python 3.5+ version)
@@ -10,7 +10,7 @@
 (Third-party libraries necessary for normal operation)
 
 ```
-BeautifulSoup4 requests lxml  (or html5lib)
+BeautifulSoup4 requests lxml (or html5lib)
 ```
 
 由于本人技术笨拙，代码中如果有不完美和可完善的地方，请多为我提供宝贵的意见而不是嘲笑我。<br>
