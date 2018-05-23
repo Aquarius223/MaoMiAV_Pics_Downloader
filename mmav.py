@@ -38,6 +38,7 @@ class Maomiav():
         self.default_part = self.saved_settings.get("default_part", "5")
         self.proxies = self.saved_settings.get("http_proxies", "")
         self.proxies_global = self.saved_settings.get("proxies_global", True)
+        self.dload_tips = self.saved_settings.get("download_tips_all", True)
 
         self.use_proxies = {"http": self.proxies, "https": self.proxies}
         self.sel_part = self.default_part
@@ -270,7 +271,7 @@ class Maomiav():
         print("===\n=== 开始下载", item["title"])
         print_i("共 %s 张" % len(pics))
         time_start = default_timer()
-        dload_file_all(self.threads_num, dir_3, self.proxies, pics)
+        dload_file_all(self.threads_num, (self.dload_tips, dir_3, self.proxies), pics)
         time_cost_all = default_timer() - time_start
         print("===\n=== %s 下载已完成! 总耗时 %.3f 秒"
               % (item["title"], time_cost_all))
@@ -303,6 +304,11 @@ class Maomiav():
             print_l("3.设置默认图区 (当前: %s)"
                     % self.parts[self.default_part][1])
             print_l("4.代理配置")
+            print_l("5.下载提醒 (当前: ", end="")
+            if self.dload_tips:
+                print("显示所有下载结果)")
+            else:
+                print("仅显示下载失败的文件)")
             print_l("0.返回")
             temp = input_an("请输入选项并按回车键: ")
             if temp == "1":
@@ -313,6 +319,8 @@ class Maomiav():
                 self.set_default_part()
             if temp == "4":
                 reset_flag_1 = self.set_proxies()
+            if temp == "5":
+                self.set_dload_tips()
             if temp == "0":
                 # 保存设置
                 save_to_json(self.saved_settings, self.fjson)
@@ -348,6 +356,10 @@ class Maomiav():
                 self.default_part = temp
                 self.saved_settings["default_part"] = self.default_part
                 return
+
+    def set_dload_tips(self):
+        self.dload_tips = not self.dload_tips
+        self.saved_settings["download_tips_all"] = self.dload_tips
 
     def set_index(self, dic, unit, info, info_2=""):
         while True:
@@ -504,15 +516,15 @@ class Maomiav():
         print("===" + " " * 30 + "===")
         print("=" * 36)
 
-def dload_file_all(max_threads_num, save_path, proxies, pics):
+def dload_file_all(max_threads_num, pars, pics):
     # 神奇的多线程下载
     with ThreadPoolExecutor(max_threads_num) as executor1:
-        executor1.map(dload_file, [save_path] * len(pics),
-                                  [proxies] * len(pics),
+        executor1.map(dload_file, [pars] * len(pics),
                                   [c["src"] for c in pics])
 
-def dload_file(save_path, proxies, url):
+def dload_file(pars, url):
     # 下载文件
+    dload_tips, save_path, proxies = pars
     file_name = url.split("/")[-1]
     try:
         r = requests.get(url, timeout=socket.getdefaulttimeout(),
@@ -524,7 +536,8 @@ def dload_file(save_path, proxies, url):
             f.write(r.content)
         fmove(file_name,
               os.path.join(os.path.abspath('.'), save_path, file_name))
-        print_i("%s 下载成功! " % file_name)
+        if dload_tips:
+            print_i("%s 下载成功! " % file_name)
     finally:
         if 'r' in locals().keys():
             del r
