@@ -319,35 +319,23 @@ class Maomiav():
                 return reset_flag_1
 
     def set_threads_num(self):
-        while True:
-            os_clear_screen(self.sysstr)
-            threads_num_list = {"1": 4, "2": 8, "3": 16, "4": 32}
-            print_in("Tip: 更低的线程数将降低下载失败的概率, "
-                     "更高的线程数将提升下载速度, 推荐 16 线程")
-            print_in("设置最大下载线程数:")
-            for k in sorted(threads_num_list.keys()):
-                print_l("%s: %-2s 线程" % (k, threads_num_list[k]))
-            temp = input_an("请输入选项并按回车键: ")
-            if temp in threads_num_list.keys():
-                self.threads_num = threads_num_list[temp]
-                self.saved_settings["max_threads_num"] = self.threads_num
-                return
+        self.threads_num = \
+            self.set_index({"1": 4, "2": 8, "3": 16, "4": 32},
+                            "线程",
+                            "更低的线程数将降低下载失败的概率, "
+                            "更高的线程数将提升下载速度, 推荐 16 线程",
+                            "设置最大下载线程数")
+        self.saved_settings["max_threads_num"] = self.threads_num
 
     def set_req_timeout(self):
-        while True:
-            os_clear_screen(self.sysstr)
-            timeout_list = {"1": 5, "2": 10, "3": 15, "4": 30}
-            print_in("Tip: 对于网络环境较差的用户, "
-                     "提高超时时间可以降低下载失败的概率...或许")
-            print_in("设置请求超时:")
-            for k in sorted(timeout_list.keys()):
-                print_l("%s: %-2s 秒" % (k, timeout_list[k]))
-            temp = input_an("请输入选项并按回车键: ")
-            if temp in timeout_list.keys():
-                self.req_timeout = timeout_list[temp]
-                self.saved_settings["request_timeout"] = self.req_timeout
-                socket.setdefaulttimeout(self.req_timeout)
-                return
+        self.req_timeout = \
+            self.set_index({"1": 5, "2": 10, "3": 15, "4": 30},
+                            "秒",
+                            "对于网络环境较差的用户, "
+                            "提高超时时间可以降低下载失败的概率...或许",
+                            "设置请求超时")
+        self.saved_settings["request_timeout"] = self.req_timeout
+        socket.setdefaulttimeout(self.req_timeout)
 
     def set_default_part(self):
         while True:
@@ -361,6 +349,18 @@ class Maomiav():
                 self.saved_settings["default_part"] = self.default_part
                 return
 
+    def set_index(self, dic, unit, info, info_2=""):
+        while True:
+            os_clear_screen(self.sysstr)
+            print_in("Tip:", info)
+            if info_2:
+                print_in(info_2 + ":")
+            for k in sorted(dic.keys()):
+                print_l("%s: %-2s %s" % (k, dic[k], unit))
+            temp = input_an("请输入选项并按回车键: ")
+            if temp in dic.keys():
+                return dic[temp]
+    
     def set_proxies(self):
         reset_flag_2 = False
         while True:
