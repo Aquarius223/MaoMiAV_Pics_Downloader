@@ -13,7 +13,7 @@ from timeit import default_timer
 from concurrent.futures import ThreadPoolExecutor
 from bs4 import BeautifulSoup
 
-__version__ = "v1.0.0"
+__version__ = "v1.1.0"
 
 class Maomiav():
 
