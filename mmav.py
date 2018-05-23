@@ -34,7 +34,7 @@ class Maomiav():
 
         self.saved_settings = read_from_json(self.fjson)
         self.threads_num = self.saved_settings.get("max_threads_num", 16)
-        self.req_timeout = self.saved_settings.get("request_timeout", 10)
+        self.req_timeout = self.saved_settings.get("request_timeout", 15)
         self.default_part = self.saved_settings.get("default_part", "5")
         self.proxies = self.saved_settings.get("http_proxies", "")
         self.proxies_global = self.saved_settings.get("proxies_global", True)
