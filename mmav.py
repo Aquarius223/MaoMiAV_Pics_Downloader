@@ -271,7 +271,8 @@ class Maomiav():
         print("===\n=== 开始下载", item["title"])
         print_i("共 %s 张" % len(pics))
         time_start = default_timer()
-        dload_file_all(self.threads_num, (self.dload_tips, dir_3, self.proxies), pics)
+        dload_file_all(self.threads_num,
+                       (self.dload_tips, dir_3, self.proxies), pics)
         time_cost_all = default_timer() - time_start
         print("===\n=== %s 下载已完成! 总耗时 %.3f 秒"
               % (item["title"], time_cost_all))
@@ -329,19 +330,19 @@ class Maomiav():
     def set_threads_num(self):
         self.threads_num = \
             self.set_index({"1": 4, "2": 8, "3": 16, "4": 32},
-                            "线程",
-                            "更低的线程数将降低下载失败的概率, "
-                            "更高的线程数将提升下载速度, 推荐 16 线程",
-                            "设置最大下载线程数")
+                           "线程",
+                           "更低的线程数将降低下载失败的概率, "
+                           "更高的线程数将提升下载速度, 推荐 16 线程",
+                           "设置最大下载线程数")
         self.saved_settings["max_threads_num"] = self.threads_num
 
     def set_req_timeout(self):
         self.req_timeout = \
             self.set_index({"1": 5, "2": 10, "3": 15, "4": 30},
-                            "秒",
-                            "对于网络环境较差的用户, "
-                            "提高超时时间可以降低下载失败的概率...或许",
-                            "设置请求超时")
+                           "秒",
+                           "对于网络环境较差的用户, "
+                           "提高超时时间可以降低下载失败的概率...或许",
+                           "设置请求超时")
         self.saved_settings["request_timeout"] = self.req_timeout
         socket.setdefaulttimeout(self.req_timeout)
 
@@ -372,7 +373,7 @@ class Maomiav():
             temp = input_an("请输入选项并按回车键: ")
             if temp in dic.keys():
                 return dic[temp]
-    
+
     def set_proxies(self):
         reset_flag_2 = False
         while True:
