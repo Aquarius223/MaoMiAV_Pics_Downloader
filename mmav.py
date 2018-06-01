@@ -57,7 +57,7 @@ class Maomiav():
             print_in("正在获取最新的链接(第 %s 次尝试)..." % try_num)
             self.url = self.get_url()
             if self.url:
-                print_in("已获取最新链接:", self.url)
+                print_in("已获取最新链接: " + self.url)
                 # 蛤?
                 sleep(1)
                 if not self.proxies_global:
@@ -122,8 +122,8 @@ class Maomiav():
         while True:
             os_clear_screen(self.sysstr)
             self.show_title()
-            print_in("当前图区:", self.parts[self.sel_part][1])
-            print_in("当前页码:", self.page_no)
+            print_in("当前图区: " + self.parts[self.sel_part][1])
+            print_in("当前页码: " + str(self.page_no))
             print_in("选择操作:")
             print_l("1.爬取此页面下的所有项目")
             print_l("2.浏览项目列表并选择其中一项爬取")
@@ -144,7 +144,7 @@ class Maomiav():
                 temp2 = self.sel_item(threads)
                 if temp2:
                     os_clear_screen(self.sysstr)
-                    print()
+                    print_()
                     self.get_item_pics(threads[int(temp2) - 1])
             if temp == "8" and self.page_no != 1:
                 self.page_no -= 1
@@ -155,9 +155,9 @@ class Maomiav():
                 del bsObj
                 return self.run()
             if temp in ("i", "I"):
-                print_in("输入其他则返回:\n")
+                print_in("输入其他则返回:")
                 try:
-                    temp2 = int(input_a("范围: 1 ~ %s : " % self.last_page_no))
+                    temp2 = int(input_a("\n范围: 1 ~ %s : " % self.last_page_no))
                 except ValueError:
                     continue
                 if temp2 < 1 or temp2 > self.last_page_no:
@@ -194,8 +194,8 @@ class Maomiav():
         page_time_start = default_timer()
         time_cost_all = 0
         for child in threads:
-            print_in("开始下载第 %s 项, 共 %s 项\n==="
-                     % (num, len(threads)))
+            print_in("开始下载第 %s 项, 共 %s 项" % (num, len(threads)))
+            print_i()
             exit_flag = self.get_item_pics(child)
             if exit_flag == "break":
                 print_an("任务已被用户终止!")
@@ -266,14 +266,16 @@ class Maomiav():
             if self.page_flag:
                 return "analyze_failed"
             return input_an("下载失败! 请按回车键返回主界面: ")
-        print("===\n=== 开始下载", item["title"])
+        print_i()
+        print_i("开始下载 " + item["title"])
         print_i("共 %s 张" % len(pics))
         time_start = default_timer()
         dload_file_all(self.threads_num,
                        (self.dload_tips, dir_3, self.proxies), pics)
         time_cost_all = default_timer() - time_start
-        print("===\n=== %s 下载已完成! 总耗时 %.3f 秒"
-              % (item["title"], time_cost_all))
+        print_i()
+        print_i("%s 下载已完成! 总耗时 %.3f 秒"
+               % (item["title"], time_cost_all))
         del bsObj
         if self.page_flag:
             return time_cost_all
@@ -305,9 +307,9 @@ class Maomiav():
             print_l("4.代理配置")
             print_l("5.下载提醒 (当前: ", end="")
             if self.dload_tips:
-                print("显示所有下载结果)")
+                print_("显示所有下载结果)")
             else:
-                print("仅显示下载失败的文件)")
+                print_("仅显示下载失败的文件)")
             print_l("0.返回")
             temp = input_an("请输入选项并按回车键: ")
             if temp == "1":
@@ -363,7 +365,7 @@ class Maomiav():
     def set_index(self, dic, unit, info, info_2=""):
         while True:
             os_clear_screen(self.sysstr)
-            print_in("Tip:", info)
+            print_in("Tip: " + info)
             if info_2:
                 print_in(info_2 + ":")
             for k in sorted(dic.keys()):
@@ -378,14 +380,14 @@ class Maomiav():
             os_clear_screen(self.sysstr)
             print_in("当前使用的代理: ", end="")
             if self.proxies:
-                print(self.proxies)
+                print_(self.proxies)
             else:
-                print("未使用")
+                print_("未使用")
             print_in("代理模式: ", end="")
             if self.proxies_global:
-                print("全局")
+                print_("全局")
             else:
-                print("仅用于获取链接")
+                print_("仅用于获取链接")
             print_in("选择操作:")
             print_l("1.设置 HTTP 代理服务器")
             print_l("2.不使用代理")
@@ -410,7 +412,7 @@ class Maomiav():
                 self.proxies = "%s:%s" % (proxies_address, proxies_port)
                 self.saved_settings["http_proxies"] = self.proxies
                 self.saved_settings["proxies_global"] = self.proxies_global
-                print_in("代理已配置为", self.proxies)
+                print_in("代理已配置为 " + self.proxies)
                 reset_flag_2 = True
                 sleep(2)
             if temp == "2":
@@ -437,7 +439,7 @@ class Maomiav():
         while True:
             os_clear_screen(self.sysstr)
             self.show_title()
-            print_in("当前图区:", self.parts[self.sel_part][1])
+            print_in("当前图区:" + self.parts[self.sel_part][1])
             print_in("所有图区:")
             for part in sorted(self.parts.keys()):
                 print_l("%s: %s" % (part, self.parts[part][1]))
@@ -485,25 +487,25 @@ class Maomiav():
     @staticmethod
     def open_failed(real_name=None):
         if real_name:
-            print_n("%s:\n" % real_name)
+            print_n(real_name + os.linestp)
         print_a("请求失败或连接超时!")
 
     @staticmethod
     def analyze_failed(real_name=None):
         if real_name:
-            print_n("%s:\n" % real_name)
+            print_n(real_name + os.linestp)
         print_a("页面解析失败!")
 
     @staticmethod
     def show_title():
-        print()
-        print("=" * 36)
-        print("===" + " " * 30 + "===")
-        print("===  猫咪 AV 图片爬取脚本 %6s ===" % __version__)
-        print("===" + " " * 30 + "===")
-        print("===" + " " * 21 + "By Pzqqt ===")
-        print("===" + " " * 30 + "===")
-        print("=" * 36)
+        print_()
+        print_("=" * 36)
+        print_("===" + " " * 30 + "===")
+        print_("===  猫咪 AV 图片爬取脚本 %6s ===" % __version__)
+        print_("===" + " " * 30 + "===")
+        print_("===" + " " * 21 + "By Pzqqt ===")
+        print_("===" + " " * 30 + "===")
+        print_("=" * 36)
 
 def dload_file_all(max_threads_num, pars, pics):
     # 神奇的多线程下载
@@ -545,17 +547,17 @@ def mkdir(path, print_flag=True):
     # 创建目录
     if os.path.exists(os.path.join(os.path.abspath('.'), path)):
         if print_flag:
-            print_a(path, " 目录已存在!")
+            print_a(path + " 目录已存在!")
         return False
     else:
         os.makedirs(path)
-        print_i(path, " 创建成功")
+        print_i(path + " 创建成功")
         return True
 
 def fmove(srcfile, dstfile):
     # 移动/重命名文件或目录
     if not (os.path.isfile(srcfile) or os.path.isdir(srcfile)):
-        print_a(srcfile, " 文件或目录不存在!")
+        print_a(srcfile + " 文件或目录不存在!")
     else:
         shutil.move(srcfile, dstfile)
 
@@ -588,7 +590,7 @@ def save_to_json(save_data, filename):
                       sort_keys=True, indent=4, ensure_ascii=False)
     # Debug
     except:
-        print(save_data)
+        print_(save_data)
         raise Exception("Write json failed!")
 
 def read_from_json(filename):
@@ -602,24 +604,26 @@ def read_from_json(filename):
         finally:
             return {}
 
-def print_n(*argv, **kw):
-    print()
-    print(*argv, **kw)
+def print_n(argv="", end=os.linesep):
+    sys.stderr.write(os.linesep + argv + end)
 
-def print_i(*argv, **kw):
-    print("===", *argv, **kw)
+def print_i(argv="", end=os.linesep):
+    sys.stderr.write("=== " + argv + end)
 
-def print_in(*argv, **kw):
-    print("\n===", *argv, **kw)
+def print_in(argv="", end=os.linesep):
+    sys.stderr.write(os.linesep + "=== " + argv + end)
 
-def print_a(*argv, **kw):
-    print("***", *argv, **kw)
+def print_a(argv="", end=os.linesep):
+    sys.stderr.write("*** " + argv + end)
 
-def print_an(*argv, **kw):
-    print("\n***", *argv, **kw)
+def print_an(argv="", end=os.linesep):
+    sys.stderr.write(os.linesep + "*** " + argv + end)
 
-def print_l(*argv, **kw):
-    print("  |\n  ===", *argv, **kw)
+def print_l(argv="", end=os.linesep):
+    sys.stderr.write("  |" + os.linesep + "  === " + argv + end)
+
+def print_(argv="", end=os.linesep):
+    sys.stderr.write(argv + end)
 
 def input_a(argv):
     return input("*** " + argv)
@@ -632,14 +636,14 @@ def main():
     ''' 检查 OS '''
     sysstr = platform.system()
     if sysstr not in ("Windows", "Linux"):
-        print("\n运行失败!\n\n不支持你的操作系统!")
+        print_("\n运行失败!\n\n不支持你的操作系统!")
         sys.exit()
 
     ''' 检测 BS4 解析器 '''
     bs4_parser = select_bs4_parser()
     if not bs4_parser:
-        print("\n运行失败!\n\n请安装至少一个解析器!")
-        print("可选: \"lxml\" 或 \"html5lib\"!")
+        print_("\n运行失败!\n\n请安装至少一个解析器!")
+        print_("可选: \"lxml\" 或 \"html5lib\"!")
         sys.exit()
 
     ''' Windows 命令行窗口设置 '''
