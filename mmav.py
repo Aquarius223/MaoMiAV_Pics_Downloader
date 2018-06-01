@@ -82,8 +82,7 @@ class Maomiav():
         else:
             url_page = ""
         print_in("正在请求页面并解析, 请稍候...")
-        ual = self.ua_open(urll + url_page)
-        bsObj = self.get_bs(ual, self.bs4_parser)
+        bsObj = self.get_bs(urll + url_page, self.bs4_parser)
         if not bsObj:
             self.open_failed(urll + url_page)
             temp = input_an("输入 \"0\" 重试, 输入 \"S\" 进入设置菜单,"
@@ -246,8 +245,7 @@ class Maomiav():
                 if temp2 == "0":
                     return
             clean_dir(dir_3)
-        ual = self.ua_open(item["link"])
-        bsObj = self.get_bs(ual, self.bs4_parser)
+        bsObj = self.get_bs(item["link"], self.bs4_parser)
         if not bsObj:
             self.open_failed(item["link"])
             if self.page_flag:
@@ -462,7 +460,7 @@ class Maomiav():
         except:
             return
 
-    def ua_open(self, urll):
+    def get_bs(self, urll, bs4_parser):
         # 使用浏览器 UA 来请求页面
         headers = {
             "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) Apple"
@@ -474,17 +472,7 @@ class Maomiav():
                                timeout=socket.getdefaulttimeout(),
                                proxies=self.use_proxies)
             req.encoding = "utf-8"
-            return req.text
-        except:
-            return
-
-    @staticmethod
-    def get_bs(urll, bs4_parser):
-        # 通过网页源码来获取 BeautifulSoup
-        if not urll:
-            return
-        try:
-            return BeautifulSoup(urll, bs4_parser)
+            return BeautifulSoup(req.text, bs4_parser)
         except:
             return
 
