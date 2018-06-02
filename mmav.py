@@ -282,8 +282,8 @@ class Maomiav():
         return input("\n=== 任务已完成!\n\n*** 请按回车键返回主界面: ")
 
     def sel_item(self, threads):
-        os_clear_screen(self.sysstr)
         while True:
+            os_clear_screen(self.sysstr)
             num = 1
             for child in threads:
                 print_in("%2s: %s %s"
