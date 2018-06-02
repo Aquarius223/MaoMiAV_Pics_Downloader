@@ -141,8 +141,10 @@ class Maomiav():
                 self.get_page_pics(threads)
             if temp == "2":
                 self.page_flag = False
-                temp2 = self.sel_item(threads)
-                if temp2:
+                while True:
+                    temp2 = self.sel_item(threads)
+                    if not temp2:
+                        break
                     os_clear_screen(self.sysstr)
                     print_()
                     self.get_item_pics(threads[int(temp2) - 1])
