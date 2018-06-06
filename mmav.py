@@ -112,7 +112,7 @@ class Maomiav():
             try:
                 threads.append({
                     "title": self.adj_dir_name(thread.get_text()[5:]),
-                    "date": thread.find("a") .find("span").get_text(),
+                    "date": thread.find("a").find("span").get_text(),
                     "link": self.url + thread.find("a")["href"]}
                 )
             except:
@@ -277,7 +277,7 @@ class Maomiav():
         time_cost_all = default_timer() - time_start
         print_i()
         print_i("%s 下载已完成! 总耗时 %.3f 秒"
-               % (item["title"], time_cost_all))
+                % (item["title"], time_cost_all))
         del bsObj
         if self.page_flag:
             return time_cost_all
@@ -410,7 +410,7 @@ class Maomiav():
                     else:
                         if 0 <= proxies_port <= 65535:
                             break
-                        print_an("输入有误!请重新输入")
+                        print_an("输入有误! 请重新输入")
                 self.proxies = "%s:%s" % (proxies_address, proxies_port)
                 self.saved_settings["http_proxies"] = self.proxies
                 self.saved_settings["proxies_global"] = self.proxies_global
@@ -457,10 +457,10 @@ class Maomiav():
     def get_url(self):
         # 使用一种非常巧妙的方法获取页面跳转后的新url地址
         try:
-            r = requests.get("http://www.mumu98.com",
-                             timeout=socket.getdefaulttimeout(),
-                             proxies=self.use_proxies)
-            return r.url
+            return requests.get("http://www.mumu98.com",
+                                timeout=socket.getdefaulttimeout(),
+                                proxies=self.use_proxies
+                                ).url
         except:
             return
 
@@ -482,9 +482,9 @@ class Maomiav():
 
     @staticmethod
     def adj_dir_name(dir_name):
-        return dir_name.replace("?", "？").replace("/", "").replace("\\", "") \
-                       .replace(":", "").replace("*", "").replace("\"", "") \
-                       .replace("<", "").replace(">", "").replace("|", "")
+        for char in ("?", "/", "\\", ":", "*", "\"", "<", ">", "|"):
+            dir_name = dir_name.replace(char, "")
+        return dir_name
 
     @staticmethod
     def open_failed(real_name=None):
