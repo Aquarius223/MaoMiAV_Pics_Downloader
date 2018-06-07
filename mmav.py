@@ -40,7 +40,6 @@ class Maomiav():
         self.proxies_global = self.saved_settings.get("proxies_global", True)
         self.dload_tips = self.saved_settings.get("download_tips_all", True)
 
-        self.use_proxies = {"http": self.proxies, "https": self.proxies}
         self.sel_part = self.default_part
 
         self.page_no = 1
@@ -54,6 +53,7 @@ class Maomiav():
         try_num = 1
         while try_num <= __MAX_TRY_NUM:
             os_clear_screen(self.sysstr)
+            self.use_proxies = {"http": self.proxies, "https": self.proxies}
             print_in("正在获取最新的链接(第 %s 次尝试)..." % try_num)
             self.url = self.get_url()
             if self.url:
