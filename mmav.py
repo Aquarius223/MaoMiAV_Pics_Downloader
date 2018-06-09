@@ -500,13 +500,13 @@ class Maomiav():
     @staticmethod
     def open_failed(real_name=None):
         if real_name:
-            print_n(real_name + os.linestp)
+            print_n(real_name + os.linesep)
         print_a("请求失败或连接超时!")
 
     @staticmethod
     def analyze_failed(real_name=None):
         if real_name:
-            print_n(real_name + os.linestp)
+            print_n(real_name + os.linesep)
         print_a("页面解析失败!")
 
     @staticmethod
