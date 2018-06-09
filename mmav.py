@@ -68,11 +68,11 @@ class Maomiav():
         print_an("Emmm... 尽管尝试了很多次, 但还是没能成功获取链接-_-!")
         print_an("请检查你的网络连接情况, 或者稍候再试？"
                  "(对了如果科学上网的话成功率会大大提高哟~)")
-        if input_an("输入 \"S\" 进入设置菜单, 输入其他则退出: ") in ("s", "S"):
+        if input_an("输入 \"S\" 进入设置菜单, 输入其他则退出: ").upper() == "S":
             self.set_settings()
             return self.__init2()
 
-    def run(self):
+    def run(self, goto_sel_item_flag=False):
         os_clear_screen(self.sysstr)
         if not self.url:
             return
@@ -89,7 +89,7 @@ class Maomiav():
                             " 输入其他则退出: ")
             if temp == "0":
                 return self.run()
-            if temp in ("s", "S"):
+            if temp.upper() == "S":
                 self.set_settings()
                 return self.run()
             return
@@ -119,6 +119,11 @@ class Maomiav():
                 continue
         # 蛤?
         sleep(1)
+        if goto_sel_item_flag:
+            self.sel_item_init(threads)
+        self.main_(threads)
+
+    def main_(self, threads):
         while True:
             os_clear_screen(self.sysstr)
             self.show_title()
@@ -140,53 +145,40 @@ class Maomiav():
             if temp == "1":
                 self.get_page_pics(threads)
             if temp == "2":
-                self.page_flag = False
-                while True:
-                    temp2 = self.sel_item(threads)
-                    if not temp2:
-                        break
-                    os_clear_screen(self.sysstr)
-                    print_()
-                    self.get_item_pics(threads[int(temp2) - 1])
+                self.sel_item_init(threads)
             if temp == "8" and self.page_no != 1:
                 self.page_no -= 1
-                del bsObj
                 return self.run()
             if temp == "9" and self.page_no != self.last_page_no:
                 self.page_no += 1
-                del bsObj
                 return self.run()
-            if temp in ("i", "I"):
+            if temp.upper() == "I":
                 print_in("输入其他则返回:")
                 try:
-                    temp2 = int(input_a("\n范围: 1 ~ %s : " % self.last_page_no))
+                    temp2 = int(input_an("范围: 1 ~ %s : " % self.last_page_no))
                 except ValueError:
                     continue
                 if temp2 < 1 or temp2 > self.last_page_no:
                     continue
                 self.page_no = temp2
-                del bsObj
                 return self.run()
             # Special
-            if temp in ("z", "Z"):
+            if temp.upper() == "Z":
                 sp_item = {}
                 sp_item["date"] = "Special"
                 sp_item["link"] = \
                     input_an("请输入页面链接(链接不正确可能会失败哟): ")
                 sp_item["title"] = "unnamed"
                 self.get_item_pics(sp_item)
-            if temp in ("x", "X"):
+            if temp.upper() == "X":
                 if self.sel_pic_part():
-                    del bsObj
                     return self.run()
-            if temp in ("s", "S"):
+            if temp.upper() == "S":
                 if self.set_settings():
-                    del bsObj
                     return self.run()
-            if temp in ("r", "R"):
-                del bsObj
+            if temp.upper() == "R":
                 return self.run()
-            if temp in ("e", "E"):
+            if temp.upper() == "E":
                 return
 
     def get_page_pics(self, threads):
@@ -239,7 +231,7 @@ class Maomiav():
                                  "之后所有的项目, 否则将清空此目录重新下载: ")
                 if temp2 == "0":
                     return "pass"
-                if temp2 in ("e", "E"):
+                if temp2.upper() == "E":
                     return "break"
             else:
                 temp2 = input_an("输入 \"0\" 取消下载,"
@@ -278,22 +270,41 @@ class Maomiav():
         print_i()
         print_i("%s 下载已完成! 总耗时 %.3f 秒"
                 % (item["title"], time_cost_all))
-        del bsObj
         if self.page_flag:
             return time_cost_all
         return input("\n=== 任务已完成!\n\n*** 请按回车键返回主界面: ")
 
+    def sel_item_init(self, threads):
+        self.page_flag = False
+        while True:
+            temp2 = self.sel_item(threads)
+            if not temp2:
+                break
+            os_clear_screen(self.sysstr)
+            print_()
+            self.get_item_pics(threads[int(temp2) - 1])
+
     def sel_item(self, threads):
         while True:
             os_clear_screen(self.sysstr)
+            print_in("当前图区: " + self.parts[self.sel_part][1])
+            print_in("当前页码: " + str(self.page_no))
             num = 1
             for child in threads:
                 print_in("%2s: %s %s"
                          % (num, child["date"], child["title"]))
                 num += 1
-            temp = input_an("请输入你想要下载的项目标号(输入 \"0\" 则返回): ")
+            print_an("请输入你想要下载的项目标号")
+            temp = input_an("输入 \"+\" 或 \"-\" 可直接翻页,"
+                            " 输入 \"0\" 则返回: ")
             if temp == "0":
                 return
+            if temp == "-" and self.page_no != 1:
+                self.page_no -= 1
+                return self.run(goto_sel_item_flag=True)
+            if temp == "+" and self.page_no != self.last_page_no:
+                self.page_no += 1
+                return self.run(goto_sel_item_flag=True)
             if temp in [str(a) for a in range(1, len(threads) + 1)]:
                 return temp
 
