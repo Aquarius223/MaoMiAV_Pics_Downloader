@@ -10,6 +10,7 @@ import json
 import socket
 from time import sleep
 from timeit import default_timer
+from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from bs4 import BeautifulSoup
 
@@ -17,15 +18,22 @@ __version__ = "v1.1.0"
 
 class Maomiav():
 
-    parts = {
-        "1": ("/htm/piclist1/", "自拍偷拍"),
-        "2": ("/htm/piclist2/", "亚洲色图"),
-        "3": ("/htm/piclist3/", "欧美色图"),
-        "4": ("/htm/piclist4/", "美腿丝袜"),
-        "5": ("/htm/piclist6/", "清纯唯美"),
-        "6": ("/htm/piclist7/", "乱伦熟女"),
-        "7": ("/htm/piclist8/", "卡通动漫")
-    }
+    __list = [
+        ("piclist1/", "自拍偷拍"), ("piclist2/", "亚洲色图"),
+        ("piclist3/", "欧美色图"), ("piclist4/", "美腿丝袜"),
+        ("piclist6/", "清纯唯美"), ("piclist7/", "乱伦熟女"),
+        ("piclist8/", "卡通动漫"),
+        ("girllist10/", "推女郎写真"),
+        # ~ ("tubaobao.htm", "兔宝宝"),
+        ("girllist16/", "假面女皇写真"), ("girllist15/", "Pantyhose"),
+        ("girllist8/", "美媛馆新刊"), ("girllist7/", "波萝社"),
+        ("girllist6/", "模范学院"), ("girllist5/", "嗲囡囡"),
+        ("girllist13/", "头条女神"), ("girllist14/", "魅妍社"),
+        ("girllist18/", "3Agirl"), ("girllist17/", "优星馆"),
+        ("girllist4/", "秀人网"), ("girllist3/", "爱蜜社"),
+        ("girllist2/", "推女神"), ("girllist1/", "V女郎")
+    ]
+    parts = OrderedDict([(str(k), v) for k, v in enumerate(__list, 1)])
     fjson = "settings.json"
 
     def __init__(self, bs4_parser, sysstr):
@@ -43,7 +51,7 @@ class Maomiav():
         self.sel_part = self.default_part
 
         self.page_no = 1
-        self.last_page_no = 0
+        self.last_page_no = 1
         self.__init2()
 
     def __init2(self):
@@ -76,7 +84,7 @@ class Maomiav():
         os_clear_screen(self.sysstr)
         if not self.url:
             return
-        urll = self.url + self.parts[self.sel_part][0]
+        urll = self.url + "/htm/" + self.parts[self.sel_part][0]
         if self.page_no > 1:
             url_page = "%s.htm" % self.page_no
         else:
@@ -95,26 +103,30 @@ class Maomiav():
             return
         print_in("正在解析页面...")
         try:
-            nb = bsObj.find("div", {"class": "box list channel"}) \
+            item_index = list(self.parts.keys()).index(self.sel_part)
+            if item_index <= 6:
+                class_attr = "box list channel"
+            else:
+                class_attr = "box movie_list"
+            nb = bsObj.find("div", {"class": class_attr}) \
                       .find("ul").find_all("li")
             if self.page_no == 1:
-                self.last_page_no = int(
-                    bsObj.find("div", {"class": "box list channel"})
-                    .find("div", {"class": "pagination"})
-                    .find_all("a")[-1]["href"]
-                    .split(".")[0]
-                )
+                try:
+                    self.last_page_no = int(
+                        bsObj.find("div", {"class": class_attr})
+                        .find("div", {"class": "pagination"})
+                        .find_all("a")[-1]["href"]
+                        .split(".")[0]
+                    )
+                except:
+                    pass
         except:
             self.analyze_failed(urll + url_page)
-            return input_a("请按回车键退出: ")
+            return input_an("请按回车键退出: ")
         threads = []
         for thread in nb:
             try:
-                threads.append({
-                    "title": self.adj_dir_name(thread.get_text()[5:]),
-                    "date": thread.find("a").find("span").get_text(),
-                    "link": self.url + thread.find("a")["href"]}
-                )
+                threads.append(self.get_threads(thread, item_index))
             except:
                 continue
         # 蛤?
@@ -164,11 +176,14 @@ class Maomiav():
                 return self.run()
             # Special
             if temp.upper() == "Z":
+                self.page_flag = False
                 sp_item = {}
                 sp_item["date"] = "Special"
                 sp_item["link"] = \
                     input_an("请输入页面链接(链接不正确可能会失败哟): ")
                 sp_item["title"] = "unnamed"
+                os_clear_screen(self.sysstr)
+                print_()
                 self.get_item_pics(sp_item)
             if temp.upper() == "X":
                 if self.sel_pic_part():
@@ -180,6 +195,20 @@ class Maomiav():
                 return self.run()
             if temp.upper() == "E":
                 return
+
+    def get_threads(self, thread, item_index):
+        if item_index <= 6:
+            return {
+                "title": self.adj_dir_name(thread.get_text()[5:]),
+                "date": thread.find("a").find("span").get_text(),
+                "link": self.url + thread.find("a")["href"]
+            }
+        else:
+            return {
+                "title": self.adj_dir_name(thread.find("h3").get_text()),
+                "date": "",
+                "link": self.url + thread.find("a")["href"]
+            }
 
     def get_page_pics(self, threads):
         os_clear_screen(self.sysstr)
@@ -221,8 +250,11 @@ class Maomiav():
             dir_2 = os.path.join("下载保存目录", "Special")
         else:
             dir_1 = os.path.join("下载保存目录", self.parts[self.sel_part][1])
-            mkdir(dir_1, False)
-            dir_2 = os.path.join(dir_1, item["date"])
+            if item["date"]:
+                mkdir(dir_1, False)
+                dir_2 = os.path.join(dir_1, item["date"])
+            else:
+                dir_2 = dir_1
         mkdir(dir_2, False)
         dir_3 = os.path.join(dir_2, item["title"])
         if not mkdir(dir_3):
@@ -363,8 +395,8 @@ class Maomiav():
         while True:
             os_clear_screen(self.sysstr)
             print_in("设置打开程序后默认所在的图区:")
-            for part in sorted(self.parts.keys()):
-                print_l("%s: %s" % (part, self.parts[part][1]))
+            for k, v in self.parts.items():
+                print_l("%s: %s" % (k, v[1]))
             temp = input_an("请输入选项并按回车键: ")
             if temp in self.parts.keys():
                 self.default_part = temp
@@ -451,16 +483,15 @@ class Maomiav():
         # 切换图区
         while True:
             os_clear_screen(self.sysstr)
-            self.show_title()
             print_in("当前图区:" + self.parts[self.sel_part][1])
             print_in("所有图区:")
-            for part in sorted(self.parts.keys()):
-                print_l("%s: %s" % (part, self.parts[part][1]))
+            for k, v in self.parts.items():
+                print_l("%s: %s" % (k, v[1]))
             temp3 = input_an("请输入你要进入的图区编号(输入 \"0\" 则返回): ")
             if temp3 in self.parts.keys():
                 self.sel_part = temp3
                 self.page_no = 1
-                self.last_page_no = 0
+                self.last_page_no = 1
                 return temp3
             if temp3 == "0":
                 return
