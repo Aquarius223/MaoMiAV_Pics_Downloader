@@ -456,7 +456,6 @@ class Maomiav():
                         print_an("输入有误! 请重新输入")
                 self.proxies = "%s:%s" % (proxies_address, proxies_port)
                 self.saved_settings["http_proxies"] = self.proxies
-                self.saved_settings["proxies_global"] = self.proxies_global
                 print_in("代理已配置为 " + self.proxies)
                 reset_flag_2 = True
                 sleep(2)
@@ -471,6 +470,7 @@ class Maomiav():
                 proxies_when = input_an("如果希望只在获取链接时使用, 请输入0, "
                                         "否则将全局使用代理(默认): ")
                 self.proxies_global = (proxies_when != "0")
+                self.saved_settings["proxies_global"] = self.proxies_global
             if temp == "0":
                 if self.proxies_global:
                     self.use_proxies = {"http": self.proxies,
