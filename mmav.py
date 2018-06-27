@@ -565,17 +565,17 @@ def dload_file(pars, url):
         r = requests.get(url, timeout=socket.getdefaulttimeout(),
                          proxies={"http": proxies, "https": proxies})
     except:
-        print_a("%s 下载失败! " % file_name)
-    else:
-        with open(file_name, 'wb') as f:
-            f.write(r.content)
-        fmove(file_name,
-              os.path.join(os.path.abspath('.'), save_path, file_name))
-        if dload_tips:
-            print_i("%s 下载成功! " % file_name)
-    finally:
-        if 'r' in locals().keys():
-            del r
+        try:
+            r = requests.get(url, timeout=15,
+                             proxies={"http": proxies, "https": proxies})
+        except:
+            return print_a("%s 下载失败! " % file_name)
+    with open(file_name, 'wb') as f:
+        f.write(r.content)
+    fmove(file_name,
+        os.path.join(os.path.abspath('.'), save_path, file_name))
+    if dload_tips:
+        print_i("%s 下载成功! " % file_name)
 
 def clean_dir(path):
     # 清空文件夹
