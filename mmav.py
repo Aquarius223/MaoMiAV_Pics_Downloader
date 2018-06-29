@@ -7,7 +7,6 @@ import platform
 import requests
 import shutil
 import json
-import socket
 from time import sleep
 from timeit import default_timer
 from collections import OrderedDict
@@ -55,7 +54,6 @@ class Maomiav():
         self.__init2()
 
     def __init2(self):
-        socket.setdefaulttimeout(self.req_timeout)
         # 最大尝试次数
         __MAX_TRY_NUM = 5
         try_num = 1
@@ -296,8 +294,11 @@ class Maomiav():
         print_i("开始下载 " + item["title"])
         print_i("共 %s 张" % len(pics))
         time_start = default_timer()
-        dload_file_all(self.threads_num,
-                       (self.dload_tips, dir_3, self.proxies), pics)
+        dload_file_all(
+            self.threads_num,
+            (self.dload_tips, dir_3, self.proxies, self.req_timeout),
+            pics
+        )
         time_cost_all = default_timer() - time_start
         print_i()
         print_i("%s 下载已完成! 总耗时 %.3f 秒"
@@ -389,7 +390,6 @@ class Maomiav():
                            "提高超时时间可以降低下载失败的概率...或许",
                            "设置请求超时")
         self.saved_settings["request_timeout"] = self.req_timeout
-        socket.setdefaulttimeout(self.req_timeout)
 
     def set_default_part(self):
         while True:
@@ -500,9 +500,8 @@ class Maomiav():
         # 使用一种非常巧妙的方法获取页面跳转后的新url地址
         try:
             return requests.get("http://www.mumu98.com",
-                                timeout=socket.getdefaulttimeout(),
-                                proxies=self.use_proxies
-                                ).url
+                                timeout=self.req_timeout,
+                                proxies=self.use_proxies).url
         except:
             return
 
@@ -515,7 +514,7 @@ class Maomiav():
         }
         try:
             req = requests.get(url=urll, headers=headers,
-                               timeout=socket.getdefaulttimeout(),
+                               timeout=self.req_timeout,
                                proxies=self.use_proxies)
             req.encoding = "utf-8"
             return BeautifulSoup(req.text, bs4_parser)
@@ -559,10 +558,10 @@ def dload_file_all(max_threads_num, pars, pics):
 
 def dload_file(pars, url):
     # 下载文件
-    dload_tips, save_path, proxies = pars
+    dload_tips, save_path, proxies, req_timeout = pars
     file_name = url.split("/")[-1]
     try:
-        r = requests.get(url, timeout=socket.getdefaulttimeout(),
+        r = requests.get(url, timeout=req_timeout,
                          proxies={"http": proxies, "https": proxies})
     except:
         try:
@@ -573,7 +572,7 @@ def dload_file(pars, url):
     with open(file_name, 'wb') as f:
         f.write(r.content)
     fmove(file_name,
-        os.path.join(os.path.abspath('.'), save_path, file_name))
+          os.path.join(os.path.abspath('.'), save_path, file_name))
     if dload_tips:
         print_i("%s 下载成功! " % file_name)
 
@@ -621,10 +620,7 @@ def select_bs4_parser():
 
 def os_clear_screen(ostype):
     # 清屏
-    if ostype == "Windows":
-        os.system("cls")
-    else:
-        os.system("clear")
+    os.system("cls") if ostype == "Windows" else os.system("clear")
 
 def save_to_json(save_data, filename):
     # 保存字典到 json 文件
