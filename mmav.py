@@ -192,7 +192,8 @@ class Maomiav():
             if temp.upper() == "R":
                 return self.run()
             if temp.upper() == "E":
-                return
+                os_clear_screen(self.sysstr)
+                sys.exit()
 
     def get_threads(self, thread, item_index):
         if item_index <= 6:
