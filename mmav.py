@@ -18,19 +18,13 @@ __version__ = "v2.0.0"
 class Maomiav():
 
     __list = [
-        ("piclist1/", "自拍偷拍"), ("piclist2/", "亚洲色图"),
-        ("piclist3/", "欧美色图"), ("piclist4/", "美腿丝袜"),
-        ("piclist6/", "清纯唯美"), ("piclist7/", "乱伦熟女"),
-        ("piclist8/", "卡通动漫"),
-        ("girllist10/", "推女郎写真"),
-        # ~ ("tubaobao.htm", "兔宝宝"),
-        ("girllist16/", "假面女皇写真"), ("girllist15/", "Pantyhose"),
-        ("girllist8/", "美媛馆新刊"), ("girllist7/", "波萝社"),
-        ("girllist6/", "模范学院"), ("girllist5/", "嗲囡囡"),
-        ("girllist13/", "头条女神"), ("girllist14/", "魅妍社"),
-        ("girllist18/", "3Agirl"), ("girllist17/", "优星馆"),
-        ("girllist4/", "秀人网"), ("girllist3/", "爱蜜社"),
-        ("girllist2/", "推女神"), ("girllist1/", "V女郎")
+        ("/tupian/list-自拍偷拍", "自拍偷拍"),
+        ("/tupian/list-亚洲色图", "亚洲色图"),
+        ("/tupian/list-欧美色图", "欧美色图"),
+        ("/tupian/list-美腿丝袜", "美腿丝袜"),
+        ("/tupian/list-清纯唯美", "清纯唯美"),
+        ("/tupian/list-乱伦熟女", "乱伦熟女"),
+        ("/tupian/list-卡通动漫", "卡通动漫"),
     ]
     parts = OrderedDict([(str(k), v) for k, v in enumerate(__list, 1)])
     fjson = "settings.json"
@@ -82,13 +76,13 @@ class Maomiav():
         os_clear_screen(self.sysstr)
         if not self.url:
             return
-        urll = self.url + "/htm/" + self.parts[self.sel_part][0]
+        urll = self.url + self.parts[self.sel_part][0]
         if self.page_no > 1:
-            url_page = "%s.htm" % self.page_no
+            url_page = "-%s" % self.page_no
         else:
             url_page = ""
         print_in("正在请求页面并解析, 请稍候...")
-        bsObj = self.get_bs(urll + url_page, self.bs4_parser)
+        bsObj = self.get_bs(urll + url_page + ".html", self.bs4_parser)
         if not bsObj:
             self.open_failed(urll + url_page)
             temp = input_an("输入 \"0\" 重试, 输入 \"S\" 进入设置菜单,"
@@ -101,21 +95,14 @@ class Maomiav():
             return
         print_in("正在解析页面...")
         try:
-            item_index = list(self.parts.keys()).index(self.sel_part)
-            if item_index <= 6:
-                class_attr = "box list channel"
-            else:
-                class_attr = "box movie_list"
-            nb = bsObj.find("div", {"class": class_attr}) \
-                      .find("ul").find_all("li")
+            id_attr = "tpl-img-content"
+            nb = bsObj.find("div", {"id": id_attr}).find_all("li")
             if self.page_no == 1:
                 try:
+                    lp = bsObj.find("div", {"class": "pagination"}) \
+                                    .find_all("a")[-1]["href"]
                     self.last_page_no = int(
-                        bsObj.find("div", {"class": class_attr})
-                        .find("div", {"class": "pagination"})
-                        .find_all("a")[-1]["href"]
-                        .split(".")[0]
-                    )
+                        lp[lp.rindex("-") + 1:lp.rindex(".")])
                 except:
                     pass
         except:
@@ -124,7 +111,7 @@ class Maomiav():
         threads = []
         for thread in nb:
             try:
-                threads.append(self.get_threads(thread, item_index))
+                threads.append(self.get_threads(thread))
             except:
                 continue
         # 蛤?
@@ -195,19 +182,12 @@ class Maomiav():
                 os_clear_screen(self.sysstr)
                 sys.exit()
 
-    def get_threads(self, thread, item_index):
-        if item_index <= 6:
-            return {
-                "title": self.adj_dir_name(thread.get_text()[5:]),
-                "date": thread.find("a").find("span").get_text(),
-                "link": self.url + thread.find("a")["href"]
-            }
-        else:
-            return {
-                "title": self.adj_dir_name(thread.find("h3").get_text()),
-                "date": "",
-                "link": self.url + thread.find("a")["href"]
-            }
+    def get_threads(self, thread):
+        return {
+            "title": self.adj_dir_name(thread.find("a")["title"]),
+            "date": thread.find("a").find("span").get_text().strip()[5:],
+            "link": self.url + thread.find("a")["href"]
+        }
 
     def get_page_pics(self, threads):
         os_clear_screen(self.sysstr)
@@ -277,9 +257,7 @@ class Maomiav():
                 return "timeout"
             return input_an("下载失败! 请按回车键返回主界面: ")
         try:
-            pics = bsObj.find("div", {"class": "box pic_text"}) \
-                        .find("div", {"class": "content"}) \
-                        .find_all("img")
+            pics = bsObj.find("div", {"class": "content"}).find_all("img")
             if item["title"] == "unnamed":
                 item["title"] = self.adj_dir_name(
                     bsObj.find("div", {"class": "page_title"}).get_text())
@@ -500,9 +478,12 @@ class Maomiav():
     def get_url(self):
         # 使用一种非常巧妙的方法获取页面跳转后的新url地址
         try:
-            return requests.get("http://www.mumu98.com",
-                                timeout=self.req_timeout,
-                                proxies=self.use_proxies).url
+            real_url = requests.get("http://www.mumu98.com",
+                                    timeout=self.req_timeout,
+                                    proxies=self.use_proxies).url
+            if real_url.endswith("/"):
+                return real_url[:-1]
+            return real_url
         except:
             return
 
@@ -555,7 +536,7 @@ def dload_file_all(max_threads_num, pars, pics):
     # 神奇的多线程下载
     with ThreadPoolExecutor(max_threads_num) as executor1:
         executor1.map(dload_file, [pars] * len(pics),
-                                  [c["src"] for c in pics])
+                                  [c["data-original"] for c in pics])
 
 def dload_file(pars, url):
     # 下载文件
