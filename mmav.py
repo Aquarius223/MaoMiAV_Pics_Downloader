@@ -257,7 +257,11 @@ class Maomiav():
                 return "timeout"
             return input_an("下载失败! 请按回车键返回主界面: ")
         try:
-            pics = bsObj.find("div", {"class": "content"}).find_all("img")
+            pics = [
+                p for p in bsObj.find("div", {"class": "content"})
+                .find_all("img")
+                if "_tmb." not in p["data-original"]
+            ]
             if item["title"] == "unnamed":
                 item["title"] = self.adj_dir_name(
                     bsObj.find("div", {"class": "page_title"}).get_text())
