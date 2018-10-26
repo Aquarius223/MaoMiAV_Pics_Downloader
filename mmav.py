@@ -7,6 +7,7 @@ import platform
 import requests
 import shutil
 import json
+import tempfile
 from time import sleep
 from timeit import default_timer
 from collections import OrderedDict
@@ -323,11 +324,8 @@ class Maomiav():
         print_i("开始下载 " + item["title"])
         print_i("共 %s 张" % len(pics))
         time_start = default_timer()
-        dload_file_all(
-            self.threads_num,
-            (self.dload_tips, dir_3, self.proxies, self.req_timeout),
-            pics
-        )
+        dload_file_all(self.threads_num, self.dload_tips, dir_3,
+                       (self.proxies, self.req_timeout), pics)
         time_cost_all = default_timer() - time_start
         print_i()
         print_i("%s 下载已完成! 总耗时 %.3f 秒"
@@ -582,31 +580,41 @@ class Maomiav():
         print_("===" + " " * 30 + "===")
         print_("=" * 36)
 
-def dload_file_all(max_threads_num, pars, pics):
-    # 神奇的多线程下载
-    with ThreadPoolExecutor(max_threads_num) as executor1:
-        executor1.map(dload_file, [pars] * len(pics),
-                                  [c["data-original"] for c in pics])
+def dload_file_all(max_threads_num, dload_tips, save_path, pars, pics):
 
-def dload_file(pars, url):
-    # 下载文件
-    dload_tips, save_path, proxies, req_timeout = pars
-    file_name = url.split("/")[-1]
-    try:
-        r = requests.get(url, timeout=req_timeout,
-                         proxies={"http": proxies, "https": proxies})
-    except:
+    def dload_file(pars, url):
+        # 下载文件
+        proxies, req_timeout = pars
+        file_name = url.split("/")[-1]
         try:
-            r = requests.get(url, timeout=15,
+            r = requests.get(url, timeout=req_timeout,
                              proxies={"http": proxies, "https": proxies})
         except:
-            return print_a("%s 下载失败! " % file_name)
-    with open(file_name, 'wb') as f:
-        f.write(r.content)
-    fmove(file_name,
-          os.path.join(os.path.abspath('.'), save_path, file_name))
-    if dload_tips:
-        print_i("%s 下载成功! " % file_name)
+            try:
+                r = requests.get(url, timeout=15,
+                                 proxies={"http": proxies, "https": proxies})
+            except:
+                return "", file_name, r.status_code
+        if r.ok:
+            return r.content, file_name, r.status_code
+        return "", file_name, r.status_code
+
+    # 神奇的多线程下载
+    with ThreadPoolExecutor(max_threads_num) as executor1:
+        for req in executor1.map(dload_file,
+                                 [pars] * len(pics),
+                                 [c["data-original"] for c in pics]):
+            fcontent, file_name, status_code = req
+            if fcontent:
+                dload_file = tempfile.mktemp(".pic.tmp")
+                with open(dload_file, 'wb') as f:
+                    f.write(fcontent)
+                fmove(dload_file,
+                      os.path.join(os.path.abspath('.'), save_path, file_name))
+                if dload_tips:
+                    print_i("%s 下载成功! " % file_name)
+            else:
+                print_a("%s 下载失败! 状态码: %s" % (file_name, status_code))
 
 def clean_dir(path):
     # 清空文件夹
