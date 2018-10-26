@@ -14,7 +14,7 @@ from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from bs4 import BeautifulSoup
 
-__version__ = "v2.1.0"
+__version__ = "v2.2.0"
 
 class Maomiav():
 
