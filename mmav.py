@@ -96,11 +96,10 @@ class Maomiav():
             if temp.upper() == "S":
                 self.set_settings()
                 return self.run()
-            return
+            sys.exit()
         print_in("正在解析页面...")
         try:
-            id_attr = "tpl-img-content"
-            nb = bsObj.find("div", {"id": id_attr}).find_all("li")
+            nb = bsObj.find("div", {"id": "tpl-img-content"}).find_all("li")
             if self.page_no == 1:
                 try:
                     lp = bsObj.find("div", {"class": "pagination"}) \
@@ -113,7 +112,8 @@ class Maomiav():
             if self.infinite_mode:
                 return
             self.analyze_failed(urll + url_page)
-            return input_an("请按回车键退出: ")
+            input_an("请按回车键退出: ")
+            sys.exit()
         threads = []
         for thread in nb:
             try:
@@ -155,10 +155,10 @@ class Maomiav():
                 self.sel_item_init(threads)
             if temp == "8" and self.page_no != 1:
                 self.page_no -= 1
-                return self.run()
+                self.run()
             if temp == "9" and self.page_no != self.last_page_no:
                 self.page_no += 1
-                return self.run()
+                self.run()
             if temp.upper() == "N":
                 self.infinite_get()
             if temp.upper() == "I":
@@ -170,7 +170,7 @@ class Maomiav():
                 if temp2 < 1 or temp2 > self.last_page_no:
                     continue
                 self.page_no = temp2
-                return self.run()
+                self.run()
             # Special
             if temp.upper() == "Z":
                 self.page_flag = False
@@ -184,12 +184,12 @@ class Maomiav():
                 self.get_item_pics(sp_item)
             if temp.upper() == "X":
                 if self.sel_pic_part():
-                    return self.run()
+                    self.run()
             if temp.upper() == "S":
                 if self.set_settings():
-                    return self.run()
+                    self.run()
             if temp.upper() == "R":
-                return self.run()
+                self.run()
             if temp.upper() == "E":
                 os_clear_screen(self.sysstr)
                 sys.exit()
@@ -265,7 +265,7 @@ class Maomiav():
                  "下载总计耗时 %i 分 %i 秒, 实际耗时 %i 分 %i 秒"
                  % (time_cost_all // 60, time_cost_all % 60,
                     page_time_cost // 60, page_time_cost % 60))
-        return input_an("请按回车键返回主界面: ")
+        input_an("请按回车键返回主界面: ")
 
     def get_item_pics(self, item):
         mkdir("下载保存目录", False)
@@ -334,7 +334,7 @@ class Maomiav():
                 % (item["title"], time_cost_all))
         if self.page_flag:
             return time_cost_all
-        return input("\n=== 任务已完成!\n\n*** 请按回车键返回主界面: ")
+        input("\n=== 任务已完成!\n\n*** 请按回车键返回主界面: ")
 
     def sel_item_init(self, threads):
         self.page_flag = False
@@ -363,10 +363,10 @@ class Maomiav():
                 return
             if temp == "-" and self.page_no != 1:
                 self.page_no -= 1
-                return self.run(goto_sel_item_flag=True)
+                self.run(goto_sel_item_flag=True)
             if temp == "+" and self.page_no != self.last_page_no:
                 self.page_no += 1
-                return self.run(goto_sel_item_flag=True)
+                self.run(goto_sel_item_flag=True)
             if temp in [str(a) for a in range(1, len(threads) + 1)]:
                 return temp
 
@@ -623,7 +623,6 @@ def mkdir(path, print_flag=True):
     if os.path.exists(os.path.join(os.path.abspath('.'), path)):
         if print_flag:
             print_a(path + " 目录已存在!")
-        return False
     else:
         os.makedirs(path)
         print_i(path + " 创建成功")
