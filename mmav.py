@@ -45,6 +45,7 @@ class Maomiav():
 
         self.page_no = 1
         self.last_page_no = 1
+        self.infinite_mode = False
         self.__init2()
 
     def __init2(self):
@@ -73,9 +74,10 @@ class Maomiav():
             return self.__init2()
 
     def run(self, goto_sel_item_flag=False):
-        os_clear_screen(self.sysstr)
         if not self.url:
-            return
+            sys.exit()
+        if not self.infinite_mode:
+            os_clear_screen(self.sysstr)
         urll = self.url + self.parts[self.sel_part][0]
         if self.page_no > 1:
             url_page = "-%s" % self.page_no
@@ -85,6 +87,8 @@ class Maomiav():
         bsObj = self.get_bs(urll + url_page + ".html", self.bs4_parser)
         if not bsObj:
             self.open_failed(urll + url_page)
+            if self.infinite_mode:
+                return
             temp = input_an("输入 \"0\" 重试, 输入 \"S\" 进入设置菜单,"
                             " 输入其他则退出: ")
             if temp == "0":
@@ -106,6 +110,8 @@ class Maomiav():
                 except:
                     pass
         except:
+            if self.infinite_mode:
+                return
             self.analyze_failed(urll + url_page)
             return input_an("请按回车键退出: ")
         threads = []
@@ -116,6 +122,9 @@ class Maomiav():
                 continue
         # 蛤?
         sleep(1)
+        if self.infinite_mode:
+            self.get_page_pics(threads)
+            return
         if goto_sel_item_flag:
             self.sel_item_init(threads)
         self.main_(threads)
@@ -133,6 +142,7 @@ class Maomiav():
                 print_l("8.← 上一页")
             if self.page_no != self.last_page_no:
                 print_l("9.→ 下一页")
+            print_l("N.无限模式")
             print_l("I.跳页")
             print_l("R.刷新页面")
             print_l("X.切换图区")
@@ -149,6 +159,8 @@ class Maomiav():
             if temp == "9" and self.page_no != self.last_page_no:
                 self.page_no += 1
                 return self.run()
+            if temp.upper() == "N":
+                self.infinite_get()
             if temp.upper() == "I":
                 print_in("输入其他则返回:")
                 try:
@@ -189,12 +201,42 @@ class Maomiav():
             "link": self.url + thread.find("a")["href"]
         }
 
-    def get_page_pics(self, threads):
+    def infinite_get(self):
         os_clear_screen(self.sysstr)
+        print_in("无限模式")
+        print_in("在无限模式下, 将会从所在图区的第一页开始"
+                 "依次下载每个项目的图片,")
+        print_("    直到下载到所在图区的最后一页为止.")
+        print_("    遇到错误会提示但不会终止, 适合挂机下载.")
+        print_an("注意! 一旦下载开始, 除非下载任务全部完成"
+                 "或是强制终止程序, 否则无法暂停/停止!")
+        print_an("你确定要继续吗?")
+        if input_an("输入 \"0\" 以继续, 输入其他则返回: ") != "0":
+            return
+        os_clear_screen(self.sysstr)
+        self.infinite_mode = True
+        self.page_no = 1
+        time_start_sp = default_timer()
+        while self.page_no <= self.last_page_no:
+            print_in("开始下载第 %s 页, 共 %s 页"
+                     % (self.page_no, self.last_page_no))
+            self.run()
+            print_in("第 %s 页下载完成!" % self.page_no)
+            self.page_no += 1
+        self.infinite_mode = False
+        self.page_flag = False
+        time_cost_sp = default_timer() - time_start_sp
+        print_in("下载任务已全部完成! 总计耗时 %i 分 %i 秒"
+                 % (time_cost_sp // 60, time_cost_sp % 60))
+        input_an("请按回车键返回主界面: ")
+
+    def get_page_pics(self, threads):
+        if not self.infinite_mode:
+            os_clear_screen(self.sysstr)
+            page_time_start = default_timer()
+            time_cost_all = 0
         num = 1
         self.page_flag = True
-        page_time_start = default_timer()
-        time_cost_all = 0
         for child in threads:
             print_in("开始下载第 %s 项, 共 %s 项" % (num, len(threads)))
             print_i()
@@ -206,7 +248,7 @@ class Maomiav():
                 print_an("已跳过 %s !" % child["title"])
             elif exit_flag in ("timeout", "analyze_failed"):
                 print_an("%s 下载失败!" % child["title"])
-            else:
+            elif not self.infinite_mode:
                 time_cost_all += exit_flag
             num += 1
             # 稍作休息
@@ -215,6 +257,8 @@ class Maomiav():
             except KeyboardInterrupt:
                 print_an("任务已被用户终止!")
                 break
+        if self.infinite_mode:
+            return
         page_time_cost = default_timer() - page_time_start
         self.page_flag = False
         print_in("下载任务已全部完成! "
@@ -237,6 +281,8 @@ class Maomiav():
         mkdir(dir_2, False)
         dir_3 = os.path.join(dir_2, item["title"])
         if not mkdir(dir_3):
+            if self.infinite_mode:
+                return "pass"
             if self.page_flag:
                 temp2 = input_an("输入 \"0\" 则跳过, 输入 \"e\" 则跳过"
                                  "之后所有的项目, 否则将清空此目录重新下载: ")
