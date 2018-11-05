@@ -273,12 +273,7 @@ class Maomiav():
         if item["date"] == "Special":
             dir_2 = os.path.join("下载保存目录", "Special")
         else:
-            dir_1 = os.path.join("下载保存目录", self.parts[self.sel_part][1])
-            if item["date"]:
-                mkdir(dir_1, False)
-                dir_2 = os.path.join(dir_1, item["date"])
-            else:
-                dir_2 = dir_1
+            dir_2 = os.path.join("下载保存目录", self.parts[self.sel_part][1])
         mkdir(dir_2, False)
         dir_3 = os.path.join(dir_2, item["title"])
         if not mkdir(dir_3):
