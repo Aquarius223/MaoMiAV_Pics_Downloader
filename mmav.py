@@ -589,7 +589,7 @@ def dload_file_all(max_threads_num, dload_tips, save_path, pars, pics):
                 r = requests.get(url, timeout=15,
                                  proxies={"http": proxies, "https": proxies})
             except:
-                return "", file_name, r.status_code
+                return "", file_name, "请求超时"
         if r.ok:
             return r.content, file_name, r.status_code
         return "", file_name, r.status_code
@@ -609,7 +609,7 @@ def dload_file_all(max_threads_num, dload_tips, save_path, pars, pics):
                 if dload_tips:
                     print_i("%s 下载成功! " % file_name)
             else:
-                print_a("%s 下载失败! 状态码: %s" % (file_name, status_code))
+                print_a("%s 下载失败! 状态: %s" % (file_name, status_code))
 
 def clean_dir(path):
     # 清空文件夹
