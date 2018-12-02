@@ -679,25 +679,25 @@ def read_from_json(filename):
             return {}
 
 def print_n(argv="", end=os.linesep):
-    sys.stderr.write(os.linesep + argv + end)
+    sys.stderr.write("%s%s%s" % (os.linesep, argv, end))
 
 def print_i(argv="", end=os.linesep):
-    sys.stderr.write("=== " + argv + end)
+    sys.stderr.write("=== %s%s" % (argv, end))
 
 def print_in(argv="", end=os.linesep):
-    sys.stderr.write(os.linesep + "=== " + argv + end)
+    sys.stderr.write("%s=== %s%s" % (os.linesep, argv, end))
 
 def print_a(argv="", end=os.linesep):
-    sys.stderr.write("*** " + argv + end)
+    sys.stderr.write("*** %s%s" % (argv, end))
 
 def print_an(argv="", end=os.linesep):
-    sys.stderr.write(os.linesep + "*** " + argv + end)
+    sys.stderr.write("%s*** %s%s" % (os.linesep, argv, end))
 
 def print_l(argv="", end=os.linesep):
-    sys.stderr.write("  |" + os.linesep + "  === " + argv + end)
+    sys.stderr.write("  |%s  === %s%s" % (os.linesep, argv, end))
 
 def print_(argv="", end=os.linesep):
-    sys.stderr.write(argv + end)
+    sys.stderr.write("%s%s" % (argv, end))
 
 def input_a(argv):
     return input("*** " + argv)
