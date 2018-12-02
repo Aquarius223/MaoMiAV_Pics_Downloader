@@ -218,6 +218,7 @@ class Maomiav():
         self.infinite_mode = True
         self.page_no = 1
         time_start_sp = default_timer()
+        self.failed_num = 0
         while self.page_no <= self.last_page_no:
             print_in("开始下载第 %s 页, 共 %s 页"
                      % (self.page_no, self.last_page_no))
@@ -236,6 +237,7 @@ class Maomiav():
             os_clear_screen(self.sysstr)
             page_time_start = default_timer()
             time_cost_all = 0
+            self.failed_num = 0
         num = 1
         self.page_flag = True
         for child in threads:
@@ -263,9 +265,10 @@ class Maomiav():
         page_time_cost = default_timer() - page_time_start
         self.page_flag = False
         print_in("下载任务已全部完成! "
-                 "下载总计耗时 %i 分 %i 秒, 实际耗时 %i 分 %i 秒"
+                 "下载总计耗时 %i 分 %i 秒, 实际耗时 %i 分 %i 秒, "
+                 "总计有 %s 张下载失败"
                  % (time_cost_all // 60, time_cost_all % 60,
-                    page_time_cost // 60, page_time_cost % 60))
+                    page_time_cost // 60, page_time_cost % 60, self.failed_num))
         input_an("请按回车键返回主界面: ")
 
     def get_item_pics(self, item):
@@ -319,12 +322,14 @@ class Maomiav():
         print_i("开始下载 " + item["title"])
         print_i("共 %s 张" % len(pics))
         time_start = default_timer()
-        dload_file_all(self.threads_num, self.dload_tips, dir_3,
-                       (self.proxies, self.req_timeout), pics)
+        failed_num_once = dload_file_all(
+            self.threads_num, self.dload_tips, dir_3,
+            (self.proxies, self.req_timeout), pics)
+        self.failed_num += failed_num_once
         time_cost_all = default_timer() - time_start
         print_i()
-        print_i("%s 下载已完成! 总耗时 %.3f 秒"
-                % (item["title"], time_cost_all))
+        print_i("%s 下载已完成! 总耗时 %.3f 秒, 有 %s 张下载失败"
+                % (item["title"], time_cost_all, failed_num_once))
         if self.page_flag:
             return time_cost_all
         input("\n=== 任务已完成!\n\n*** 请按回车键返回主界面: ")
@@ -337,6 +342,7 @@ class Maomiav():
                 break
             os_clear_screen(self.sysstr)
             print_()
+            self.failed_num = 0
             self.get_item_pics(threads[int(temp2) - 1])
 
     def sel_item(self, threads):
@@ -594,6 +600,8 @@ def dload_file_all(max_threads_num, dload_tips, save_path, pars, pics):
             return r.content, file_name, r.status_code
         return "", file_name, r.status_code
 
+    # 统计下载失败的文件数量
+    failed_num = 0
     # 神奇的多线程下载
     with ThreadPoolExecutor(max_threads_num) as executor1:
         for req in executor1.map(dload_file,
@@ -610,6 +618,8 @@ def dload_file_all(max_threads_num, dload_tips, save_path, pars, pics):
                     print_i("%s 下载成功! " % file_name)
             else:
                 print_a("%s 下载失败! 状态: %s" % (file_name, status_code))
+                failed_num += 1
+    return failed_num
 
 def clean_dir(path):
     # 清空文件夹
