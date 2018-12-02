@@ -521,7 +521,7 @@ class Maomiav():
     def get_url(self):
         # 使用一种非常巧妙的方法获取页面跳转后的新url地址
         try:
-            real_url = requests.get("http://www.mumu98.com",
+            real_url = requests.get("https://www.392cf.com/",
                                     timeout=self.req_timeout,
                                     proxies=self.use_proxies).url
             if real_url.endswith("/"):
