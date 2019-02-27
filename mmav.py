@@ -104,9 +104,8 @@ class Maomiav():
             if self.page_no == 1:
                 try:
                     lp = bsObj.find("div", {"class": "pagination"}) \
-                                    .find_all("a")[-1]["href"]
-                    self.last_page_no = int(
-                        lp[lp.rindex("-") + 1:lp.rindex(".")])
+                              .find_all("a")[-1]["href"]
+                    self.last_page_no = int(lp[lp.rindex("-")+1:lp.rindex(".")])
                 except:
                     pass
         except:
@@ -206,8 +205,8 @@ class Maomiav():
         os_clear_screen(self.sysstr)
         print_in("无限模式")
         print_in("在无限模式下, 将会从所在图区的第一页开始"
-                 "依次下载每个项目的图片,")
-        print_("    直到下载到所在图区的最后一页为止.")
+                 "依次下载每个项目的图片,\n")
+        print_("    直到下载到所在图区的最后一页为止.\n")
         print_("    遇到错误会提示但不会终止, 适合挂机下载.")
         print_an("注意! 一旦下载开始, 除非下载任务全部完成"
                  "或是强制终止程序, 否则无法暂停/停止!")
@@ -556,7 +555,7 @@ class Maomiav():
     def adj_dir_name(dir_name):
         for char in ("?", "/", "\\", ":", "*", "\"", "<", ">", "|"):
             dir_name = dir_name.replace(char, "")
-        return dir_name
+        return dir_name.strip()
 
     @staticmethod
     def open_failed(real_name=None):
