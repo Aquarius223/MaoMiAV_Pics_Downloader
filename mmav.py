@@ -612,6 +612,8 @@ def dload_file_all(max_threads_num, dload_tips, save_path, pars, pics):
                 dload_file = tempfile.mktemp(".pic.tmp")
                 with open(dload_file, 'wb') as f:
                     f.write(fcontent)
+                if fcontent[1:4] == b'PNG':
+                    file_name = file_name[:file_name.rindex(".")] + ".png"
                 fmove(dload_file,
                       os.path.join(os.path.abspath('.'), save_path, file_name))
                 if dload_tips:
