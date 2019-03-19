@@ -582,43 +582,36 @@ class Maomiav():
 
 def dload_file_all(max_threads_num, dload_tips, save_path, pars, pics):
 
-    def dload_file(pars, url):
-        # 下载文件
-        proxies, req_timeout = pars
+    def dload_file(url):
         file_name = url.split("/")[-1]
         try:
-            r = requests.get(url, timeout=req_timeout,
-                             proxies={"http": proxies, "https": proxies})
+            r = requests.get(url, timeout=req_timeout, proxies={"http": proxies, "https": proxies})
         except:
             try:
-                r = requests.get(url, timeout=15,
-                                 proxies={"http": proxies, "https": proxies})
+                r = requests.get(url, timeout=15, proxies={"http": proxies, "https": proxies})
             except:
-                return "", file_name, "请求超时"
+                print_a("%s 下载失败! 状态: %s" % (file_name, "请求超时"))
+                return
         if r.ok:
-            return r.content, file_name, r.status_code
-        return "", file_name, r.status_code
+            dload_file = tempfile.mktemp(".pic.tmp")
+            with open(dload_file, 'wb') as f:
+                f.write(r.content)
+            if r.content[1:4] == b'PNG':
+                file_name = file_name[:file_name.rindex(".")] + ".png"
+            fmove(dload_file, os.path.join(os.path.abspath('.'), save_path, file_name))
+            if dload_tips:
+                print_i("%s 下载成功! " % file_name)
+            return True
+        else:
+            print_a("%s 下载失败! 状态: %s" % (file_name, r.status_code))
 
+    proxies, req_timeout = pars
     # 统计下载失败的文件数量
     failed_num = 0
     # 神奇的多线程下载
     with ThreadPoolExecutor(max_threads_num) as executor1:
-        for req in executor1.map(dload_file,
-                                 [pars] * len(pics),
-                                 [c["data-original"] for c in pics]):
-            fcontent, file_name, status_code = req
-            if fcontent:
-                dload_file = tempfile.mktemp(".pic.tmp")
-                with open(dload_file, 'wb') as f:
-                    f.write(fcontent)
-                if fcontent[1:4] == b'PNG':
-                    file_name = file_name[:file_name.rindex(".")] + ".png"
-                fmove(dload_file,
-                      os.path.join(os.path.abspath('.'), save_path, file_name))
-                if dload_tips:
-                    print_i("%s 下载成功! " % file_name)
-            else:
-                print_a("%s 下载失败! 状态: %s" % (file_name, status_code))
+        for result in executor1.map(dload_file, [c["data-original"] for c in pics]):
+            if not result:
                 failed_num += 1
     return failed_num
 
