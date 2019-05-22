@@ -4,7 +4,6 @@
 import os
 import sys
 import platform
-import requests
 import shutil
 import json
 import tempfile
@@ -12,7 +11,11 @@ from time import sleep
 from timeit import default_timer
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
+import asyncio
+
+import requests
 from bs4 import BeautifulSoup
+import aiohttp
 
 __version__ = "v2.2.0"
 
@@ -35,6 +38,7 @@ class Maomiav():
         self.sysstr = sysstr
 
         self.saved_settings = read_from_json(self.fjson)
+        self.aio_download = self.saved_settings.get("aio_download", 0)
         self.threads_num = self.saved_settings.get("max_threads_num", 16)
         self.req_timeout = self.saved_settings.get("request_timeout", 15)
         self.default_part = self.saved_settings.get("default_part", "5")
@@ -321,9 +325,14 @@ class Maomiav():
         print_i("开始下载 " + item["title"])
         print_i("共 %s 张" % len(pics))
         time_start = default_timer()
-        failed_num_once = dload_file_all(
-            self.threads_num, self.dload_tips, dir_3,
-            (self.proxies, self.req_timeout), pics)
+        if self.aio_download == 1:
+            failed_num_once = dload_file_all_aio(
+                self.dload_tips, dir_3,
+                (self.proxies, self.req_timeout), pics)
+        else:
+            failed_num_once = dload_file_all(
+                self.threads_num, self.dload_tips, dir_3,
+                (self.proxies, self.req_timeout), pics)
         self.failed_num += failed_num_once
         time_cost_all = default_timer() - time_start
         print_i()
@@ -373,7 +382,11 @@ class Maomiav():
         while True:
             os_clear_screen(self.sysstr)
             print_in("程序设置:")
-            print_l("1.设置下载最大线程数 (当前: %s 线程)" % self.threads_num)
+            print_l("1.设置下载方式 (当前: ", end="")
+            if self.aio_download:
+                print_("异步 IO 实现)")
+            else:
+                print_("多线程实现, %s 线程)" % self.threads_num)
             print_l("2.设置请求超时 (当前: %s 秒)" % self.req_timeout)
             print_l("3.设置默认图区 (当前: %s)"
                     % self.parts[self.default_part][1])
@@ -386,7 +399,7 @@ class Maomiav():
             print_l("0.返回")
             temp = input_an("请输入选项并按回车键: ")
             if temp == "1":
-                self.set_threads_num()
+                self.set_download_method()
             if temp == "2":
                 self.set_req_timeout()
             if temp == "3":
@@ -399,6 +412,20 @@ class Maomiav():
                 # 保存设置
                 save_to_json(self.saved_settings, self.fjson)
                 return reset_flag_1
+
+    def set_download_method(self):
+        while True:
+            os_clear_screen(self.sysstr)
+            print_in("多线程下载更稳定, 异步 IO 下载速度更快, 但尚处于测试阶段:")
+            print_l("1: 多线程实现")
+            print_l("2: 异步 IO 实现")
+            temp = input_an("请输入选项并按回车键: ")
+            if temp in ("1", "2"):
+                self.aio_download = int(temp) - 1
+                self.saved_settings["aio_download"] = self.aio_download
+                if self.aio_download == 0:
+                    self.set_threads_num()
+                return
 
     def set_threads_num(self):
         self.threads_num = \
@@ -553,7 +580,7 @@ class Maomiav():
 
     @staticmethod
     def adj_dir_name(dir_name):
-        for char in ("?", "/", "\\", ":", "*", "\"", "<", ">", "|"):
+        for char in ("?", "/", "\\", ":", "*", "\"", "<", ">", "|", "."):
             dir_name = dir_name.replace(char, "")
         return dir_name.strip()
 
@@ -604,15 +631,56 @@ def dload_file_all(max_threads_num, dload_tips, save_path, pars, pics):
             return True
         else:
             print_a("%s 下载失败! 状态: %s" % (file_name, r.status_code))
+            nonlocal failed_num
+            failed_num += 1
 
     proxies, req_timeout = pars
     # 统计下载失败的文件数量
     failed_num = 0
     # 神奇的多线程下载
     with ThreadPoolExecutor(max_threads_num) as executor1:
-        for result in executor1.map(dload_file, [c["data-original"] for c in pics]):
-            if not result:
-                failed_num += 1
+        executor1.map(dload_file, [c["data-original"] for c in pics])
+    return failed_num
+
+def dload_file_all_aio(dload_tips, save_path, pars, pics):
+    # 下载的异步IO实现
+
+    async def request_get(url):
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(url, timeout=req_timeout, proxy=proxies) as response:
+                    content = await response.read()
+                    return response.status, content
+            except asyncio.TimeoutError:
+                return "请求超时", None
+
+    async def dload_file_aio(url):
+        # 下载文件
+        file_name = url.split("/")[-1]
+        req_status, req_content = await request_get(url)
+        if req_status != 200:
+            print_a("%s 请求失败! 状态: %s" % (file_name, req_status))
+            nonlocal failed_num
+            failed_num += 1
+            return
+        dload_file = tempfile.mktemp(".pic.tmp")
+        with open(dload_file, "wb") as f:
+            f.write(req_content)
+        if req_content[1:4] == b"PNG":
+            file_name = file_name[:file_name.rindex(".")] + ".png"
+        fmove(dload_file, os.path.join(os.getcwd(), save_path, file_name))
+        if dload_tips:
+            print_i("%s 下载成功! " % file_name)
+
+    urls = [c["data-original"] for c in pics]
+    proxies, req_timeout = pars
+    proxies = "http://" + proxies
+    # 统计下载失败的文件数量
+    failed_num = 0
+
+    loop = asyncio.get_event_loop()
+    tasks = [dload_file_aio(url) for url in urls]
+    loop.run_until_complete(asyncio.wait(tasks))
     return failed_num
 
 def clean_dir(path):
