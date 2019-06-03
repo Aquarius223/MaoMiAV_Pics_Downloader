@@ -21,6 +21,8 @@ __version__ = "v2.2.0"
 
 class Maomiav():
 
+    HOME_URL = "https://www.maomiav.com/"
+    FILE_JSON = "settings.json"
     __list = [
         ("/tupian/list-自拍偷拍", "自拍偷拍"),
         ("/tupian/list-亚洲色图", "亚洲色图"),
@@ -31,13 +33,12 @@ class Maomiav():
         ("/tupian/list-卡通动漫", "卡通动漫"),
     ]
     parts = OrderedDict([(str(k), v) for k, v in enumerate(__list, 1)])
-    fjson = "settings.json"
 
     def __init__(self, bs4_parser, sysstr):
         self.bs4_parser = bs4_parser
         self.sysstr = sysstr
 
-        self.saved_settings = read_from_json(self.fjson)
+        self.saved_settings = read_from_json(self.FILE_JSON)
         self.aio_download = self.saved_settings.get("aio_download", 0)
         self.threads_num = self.saved_settings.get("max_threads_num", 16)
         self.req_timeout = self.saved_settings.get("request_timeout", 15)
@@ -410,7 +411,7 @@ class Maomiav():
                 self.set_dload_tips()
             if temp == "0":
                 # 保存设置
-                save_to_json(self.saved_settings, self.fjson)
+                save_to_json(self.saved_settings, self.FILE_JSON)
                 return reset_flag_1
 
     def set_download_method(self):
@@ -551,9 +552,10 @@ class Maomiav():
                 return
 
     def get_url(self):
-        # 使用一种非常巧妙的方法获取页面跳转后的新url地址
         try:
-            real_url = requests.get("https://www.392cf.com/",
+            source_url = self.get_bs(self.HOME_URL, self.bs4_parser).find("a")["href"]
+            # 使用一种非常巧妙的方法获取页面跳转后的新url地址
+            real_url = requests.get(source_url,
                                     timeout=self.req_timeout,
                                     proxies=self.use_proxies).url
             if real_url.endswith("/"):
