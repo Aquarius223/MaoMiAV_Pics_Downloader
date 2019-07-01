@@ -12,6 +12,7 @@ from timeit import default_timer
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
+import re
 
 import requests
 from bs4 import BeautifulSoup
@@ -21,7 +22,6 @@ __version__ = "v2.2.0"
 
 class Maomiav():
 
-    HOME_URL = "https://www.maomiav.com/"
     FILE_JSON = "settings.json"
     __list = [
         ("/tupian/list-自拍偷拍", "自拍偷拍"),
@@ -553,7 +553,10 @@ class Maomiav():
 
     def get_url(self):
         try:
-            source_url = self.get_bs(self.HOME_URL, self.bs4_parser).find("a")["href"]
+            config_js = requests.get("https://www.maomiav.com/assets/js/custom/config.js",
+                                     timeout=self.req_timeout,
+                                     proxies=self.use_proxies)
+            source_url = re.search('window.line_1 = "(.*?)";', config_js.text).group(1)
             # 使用一种非常巧妙的方法获取页面跳转后的新url地址
             real_url = requests.get(source_url,
                                     timeout=self.req_timeout,
