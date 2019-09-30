@@ -77,7 +77,7 @@ class Maomiav():
                  "(对了如果科学上网的话成功率会大大提高哟~)")
         if input_an("输入 \"S\" 进入设置菜单, 输入其他则退出: ").upper() == "S":
             self.set_settings()
-            return self.__init2()
+            self.__init2()
 
     def run(self, goto_sel_item_flag=False):
         if not self.url:
@@ -98,10 +98,12 @@ class Maomiav():
             temp = input_an("输入 \"0\" 重试, 输入 \"S\" 进入设置菜单,"
                             " 输入其他则退出: ")
             if temp == "0":
-                return self.run()
+                self.run()
+                return
             if temp.upper() == "S":
                 self.set_settings()
-                return self.run()
+                self.run()
+                return
             sys.exit()
         print_in("正在解析页面...")
         try:
@@ -297,18 +299,18 @@ class Maomiav():
                 temp2 = input_an("输入 \"0\" 取消下载,"
                                  " 否则将清空此目录重新下载: ")
                 if temp2 == "0":
-                    return
+                    return ""
             clean_dir(dir_3)
         bsObj = self.get_bs(item["link"], self.bs4_parser)
         if not bsObj:
             self.open_failed(item["link"])
             if self.page_flag:
                 return "timeout"
-            return input_an("下载失败! 请按回车键返回主界面: ")
+            input_an("下载失败! 请按回车键返回主界面: ")
+            return ""
         try:
             pics = [
-                p for p in bsObj.find("div", {"class": "content"})
-                .find_all("img")
+                p for p in bsObj.find("div", {"class": "content"}).find_all("img")
                 if "_tmb." not in p["data-original"]
             ]
             if item["title"] == "unnamed":
@@ -321,7 +323,8 @@ class Maomiav():
             self.analyze_failed(item["link"])
             if self.page_flag:
                 return "analyze_failed"
-            return input_an("下载失败! 请按回车键返回主界面: ")
+            input_an("下载失败! 请按回车键返回主界面: ")
+            return ""
         print_i()
         print_i("开始下载 " + item["title"])
         print_i("共 %s 张" % len(pics))
@@ -368,7 +371,7 @@ class Maomiav():
             temp = input_an("输入 \"+\" 或 \"-\" 可直接翻页,"
                             " 输入 \"0\" 则返回: ")
             if temp == "0":
-                return
+                return ""
             if temp == "-" and self.page_no != 1:
                 self.page_no -= 1
                 self.run(goto_sel_item_flag=True)
@@ -547,7 +550,7 @@ class Maomiav():
                 self.sel_part = temp3
                 self.page_no = 1
                 self.last_page_no = 1
-                return temp3
+                return True
             if temp3 == "0":
                 return
 
@@ -565,7 +568,7 @@ class Maomiav():
                 return real_url[:-1]
             return real_url
         except:
-            return
+            return ""
 
     def get_bs(self, urll, bs4_parser):
         # 使用浏览器 UA 来请求页面
@@ -623,21 +626,22 @@ def dload_file_all(max_threads_num, dload_tips, save_path, pars, pics):
                 r = requests.get(url, timeout=15, proxies={"http": proxies, "https": proxies})
             except:
                 print_a("%s 下载失败! 状态: %s" % (file_name, "请求超时"))
-                return
-        if r.ok:
-            dload_file = tempfile.mktemp(".pic.tmp")
-            with open(dload_file, 'wb') as f:
-                f.write(r.content)
-            if r.content[1:4] == b'PNG':
-                file_name = file_name[:file_name.rindex(".")] + ".png"
-            fmove(dload_file, os.path.join(os.path.abspath('.'), save_path, file_name))
-            if dload_tips:
-                print_i("%s 下载成功! " % file_name)
-            return True
-        else:
+                return False
+        if not r.ok:
             print_a("%s 下载失败! 状态: %s" % (file_name, r.status_code))
             nonlocal failed_num
             failed_num += 1
+            return False
+        dload_file = tempfile.mktemp(".pic.tmp")
+        with open(dload_file, 'wb') as f:
+            f.write(r.content)
+        if r.content[1:4] == b'PNG':
+            file_name = file_name[:file_name.rindex(".")] + ".png"
+        fmove(dload_file, os.path.join(os.path.abspath('.'), save_path, file_name))
+        if dload_tips:
+            print_i("%s 下载成功! " % file_name)
+        return True
+
 
     proxies, req_timeout = pars
     # 统计下载失败的文件数量
@@ -703,10 +707,10 @@ def mkdir(path, print_flag=True):
     if os.path.exists(os.path.join(os.path.abspath('.'), path)):
         if print_flag:
             print_a(path + " 目录已存在!")
-    else:
-        os.makedirs(path)
-        print_i(path + " 创建成功")
-        return True
+        return False
+    os.makedirs(path)
+    print_i(path + " 创建成功")
+    return True
 
 def fmove(srcfile, dstfile):
     # 移动/重命名文件或目录
@@ -727,7 +731,7 @@ def select_bs4_parser():
             del html5lib
             return "html5lib"
         except ModuleNotFoundError:
-            return
+            return ""
 
 def os_clear_screen(ostype):
     # 清屏
