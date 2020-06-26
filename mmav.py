@@ -18,7 +18,7 @@ import requests
 from bs4 import BeautifulSoup
 import aiohttp
 
-__version__ = "v2.2.0"
+__version__ = "v2.3.0"
 
 class Maomiav():
 
