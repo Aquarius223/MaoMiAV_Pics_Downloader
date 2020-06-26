@@ -99,12 +99,12 @@ class Maomiav():
                             " 输入其他则退出: ")
             if temp == "0":
                 self.run()
-                return
-            if temp.upper() == "S":
+            elif temp.upper() == "S":
                 self.set_settings()
                 self.run()
-                return
-            sys.exit()
+            else:
+                sys.exit()
+            return
         print_in("正在解析页面...")
         try:
             nb = bsObj.find("div", {"id": "tpl-img-content"}).find_all("li")
@@ -204,7 +204,7 @@ class Maomiav():
     def get_threads(self, thread):
         return {
             "title": self.adj_dir_name(thread.find("a")["title"]),
-            "date": thread.find("a").find("span").get_text().strip()[5:],
+            "date": thread.find("span").get_text().strip(),
             "link": self.url + thread.find("a")["href"]
         }
 
@@ -590,7 +590,8 @@ class Maomiav():
     def adj_dir_name(dir_name):
         for char in ("?", "/", "\\", ":", "*", "\"", "<", ">", "|", "."):
             dir_name = dir_name.replace(char, "")
-        return dir_name.strip()
+        dir_name = dir_name.replace(" ", "_")
+        return dir_name
 
     @staticmethod
     def open_failed(real_name=None):
@@ -665,9 +666,9 @@ def dload_file_all_aio(dload_tips, save_path, pars, pics):
     async def request_get(url):
         async with aiohttp.ClientSession() as session:
             try:
-                async with session.get(url, timeout=req_timeout, proxy=proxies) as response:
-                    content = await response.read()
-                    return response.status, content
+                response = await session.get(url, timeout=req_timeout, proxy=proxies)
+                content = await response.read()
+                return response.status, content
             except asyncio.TimeoutError:
                 return "请求超时", None
 
@@ -780,7 +781,7 @@ def save_to_json(save_data, filename):
 def read_from_json(filename):
     # 从 json 文件中读取字典
     try:
-        with open(filename, "r", errors="ignore") as savefile:
+        with open(filename, "r", encoding="utf-8", errors="ignore") as savefile:
             return json.load(savefile)
     except:
         try:
