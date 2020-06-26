@@ -13,11 +13,11 @@
 aiohttp BeautifulSoup4 requests lxml (or html5lib)
 ```
 
-由于本人技术笨拙，代码中如果有不完美和可完善的地方，请多为我提供宝贵的意见而不是嘲笑我。<br>
-(Due to my technical clumsy, if the code is not perfect enough, please give me more advice, rather than laugh at me.)
+由于是早期作品，所以代码很丑，但奏是能用，我也懒得重构。#(滑稽)<br>
+(Because it's an early work, the code is ugly, but still working fine, I am too lazy to refactor)
 
-此程序不支持在Win和Linux以外的操作系统下运行，并且目前只支持简体中文，以后会考虑做出GUI。<br>
-(This program does not support OS other than Win and Linux, and only supports Chinese(Simplified) now, will consider making a GUI.)
+此程序不支持在Win和Linux以外的操作系统下运行，并且目前只支持简体中文。<br>
+(This program does not support OS other than Win and Linux, and only supports Chinese(Simplified) now.)
 
 如果需要启动本程序，请执行：<br>
 (To execute:)
