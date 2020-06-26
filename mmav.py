@@ -617,7 +617,8 @@ class Maomiav():
 
 def dload_file_all(max_threads_num, dload_tips, save_path, pars, pics):
 
-    def dload_file(url):
+    def _dload_file(url):
+        nonlocal failed_num
         file_name = url.split("/")[-1]
         try:
             r = requests.get(url, timeout=req_timeout, proxies={"http": proxies, "https": proxies})
@@ -629,26 +630,33 @@ def dload_file_all(max_threads_num, dload_tips, save_path, pars, pics):
                 return False
         if not r.ok:
             print_a("%s 下载失败! 状态: %s" % (file_name, r.status_code))
-            nonlocal failed_num
             failed_num += 1
             return False
         dload_file = tempfile.mktemp(".pic.tmp")
         with open(dload_file, 'wb') as f:
             f.write(r.content)
-        if r.content[1:4] == b'PNG':
+        if url.endswith(".txt"):
+            # 解密文件是CPU密集型操作 但是因为解密一张图片很快(不到1秒) 所以直接在线程里操作就行了
+            rc = os.system("des_decrypt {0} {0}.jpg".format(dload_file))
+            if rc != 0:
+                print_a("%s 解密失败!" % file_name)
+                failed_num += 1
+                return False
+            dload_file += ".jpg"
+            file_name = file_name[:file_name.rindex(".")] + ".jpg"
+        elif r.content[1:4] == b'PNG':
             file_name = file_name[:file_name.rindex(".")] + ".png"
         fmove(dload_file, os.path.join(os.path.abspath('.'), save_path, file_name))
         if dload_tips:
             print_i("%s 下载成功! " % file_name)
         return True
 
-
     proxies, req_timeout = pars
     # 统计下载失败的文件数量
     failed_num = 0
     # 神奇的多线程下载
     with ThreadPoolExecutor(max_threads_num) as executor1:
-        executor1.map(dload_file, [c["data-original"] for c in pics])
+        executor1.map(_dload_file, [c["data-original"] for c in pics])
     return failed_num
 
 def dload_file_all_aio(dload_tips, save_path, pars, pics):
@@ -690,6 +698,20 @@ def dload_file_all_aio(dload_tips, save_path, pars, pics):
     loop = asyncio.get_event_loop()
     tasks = [dload_file_aio(url) for url in urls]
     loop.run_until_complete(asyncio.wait(tasks))
+
+    # 解密操作放到协程里会阻塞 还是需要丢到线程池里进行操作比较好
+    def des_decrypt(file_):
+        rc = os.system("des_decrypt {0} {0}.jpg".format(file_))
+        if rc != 0:
+            print_a("%s 解密失败!" % file_)
+        else:
+            remove_path(file_)
+
+    encryptd_files = [file for file in os.listdir(os.path.join(os.getcwd(), save_path)) if file.endswith(".txt")]
+    if encryptd_files:
+        print_i("发现被加密的文件! 正在解密...")
+        with ThreadPoolExecutor(8) as executor2:
+            executor2.map(des_decrypt, [os.path.join(os.getcwd(), save_path, file) for file in encryptd_files])
     return failed_num
 
 def clean_dir(path):
@@ -718,6 +740,13 @@ def fmove(srcfile, dstfile):
         print_a(srcfile + " 文件或目录不存在!")
     else:
         shutil.move(srcfile, dstfile)
+
+def remove_path(path):
+    # 移除文件/目录(如果存在的话)
+    if os.path.isdir(path):
+        shutil.rmtree(path)
+    elif os.path.exists(path):
+        os.remove(path)
 
 def select_bs4_parser():
     # 选择 BS4 解析器(优先使用lxml)
