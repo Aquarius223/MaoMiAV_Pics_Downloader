@@ -52,7 +52,7 @@ func main() {
     encrypted_bytes, _ := base64.StdEncoding.DecodeString(encrypted_b64str)
     decrypted_stockstr, err := goEncrypt.DesCbcDecrypt(encrypted_bytes, key, iv...)
     if err != nil {
-        fmt.Println(err)
+        panic(err)
     }
     decrypted_str := string(decrypted_stockstr)
 
