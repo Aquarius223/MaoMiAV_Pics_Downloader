@@ -643,6 +643,7 @@ def dload_file_all(max_threads_num, dload_tips, save_path, pars, pics):
                 print_a("%s 解密失败!" % file_name)
                 failed_num += 1
                 return False
+            remove_path(dload_file)
             dload_file += ".jpg"
             file_name = file_name[:file_name.rindex(".")] + ".jpg"
         elif r.content[1:4] == b'PNG':
