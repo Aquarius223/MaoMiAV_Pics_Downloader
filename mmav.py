@@ -20,6 +20,9 @@ import aiohttp
 
 __version__ = "v2.3.0"
 
+UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,"
+      " like Gecko) Chrome/84.0.4147.125 Safari/537.36")
+
 class Maomiav():
 
     FILE_JSON = "settings.json"
@@ -62,7 +65,7 @@ class Maomiav():
             os_clear_screen(self.sysstr)
             self.use_proxies = {"http": self.proxies, "https": self.proxies}
             print_in("正在获取最新的链接(第 %s 次尝试)..." % try_num)
-            self.url = self.get_url()
+            self.url, self.re_url = self.get_url()
             if self.url:
                 print_in("已获取最新链接: " + self.url)
                 # 蛤?
@@ -331,12 +334,18 @@ class Maomiav():
         time_start = default_timer()
         if self.aio_download == 1:
             failed_num_once = dload_file_all_aio(
-                self.dload_tips, dir_3,
-                (self.proxies, self.req_timeout), pics)
+                self.dload_tips,
+                dir_3,
+                (self.proxies, self.req_timeout, self.re_url, item["link"]),
+                pics
+            )
         else:
             failed_num_once = dload_file_all(
-                self.threads_num, self.dload_tips, dir_3,
-                (self.proxies, self.req_timeout), pics)
+                self.threads_num,
+                self.dload_tips, dir_3,
+                (self.proxies, self.req_timeout, self.re_url, item["link"]),
+                pics
+            )
         self.failed_num += failed_num_once
         time_cost_all = default_timer() - time_start
         print_i()
@@ -560,23 +569,19 @@ class Maomiav():
                                      timeout=self.req_timeout,
                                      proxies=self.use_proxies)
             source_url = re.search('window.line_1 = "(.*?)";', config_js.text).group(1)
-            # 使用一种非常巧妙的方法获取页面跳转后的新url地址
-            real_url = requests.get(source_url,
-                                    timeout=self.req_timeout,
-                                    proxies=self.use_proxies).url
-            if real_url.endswith("/"):
-                return real_url[:-1]
-            return real_url
+            r = requests.get(source_url, timeout=self.req_timeout, proxies=self.use_proxies)
+            r.encoding = "utf-8"
+            real_url = re.search('LDtemp\s*=\s*\[\s*"(.*?)".*\]', r.text).group(1)
+            real_url = "https://www." + real_url
+            real_url2 = re.search('url2\s*=\s*\[\s*"(.*?)".*\]', r.text).group(1)
+            real_url2 = "https://www." + real_url2
+            return real_url, real_url2
         except:
-            return ""
+            return "", ""
 
     def get_bs(self, urll, bs4_parser):
         # 使用浏览器 UA 来请求页面
-        headers = {
-            "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) Apple"
-                           "WebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3"
-                           "202.94 Safari/537.36")
-        }
+        headers = {"User-Agent": UA}
         try:
             req = requests.get(url=urll, headers=headers,
                                timeout=self.req_timeout,
@@ -622,10 +627,20 @@ def dload_file_all(max_threads_num, dload_tips, save_path, pars, pics):
         nonlocal failed_num
         file_name = url.split("/")[-1]
         try:
-            r = requests.get(url, timeout=req_timeout, proxies={"http": proxies, "https": proxies})
+            r = requests.get(
+                url,
+                timeout=req_timeout,
+                proxies={"http": proxies, "https": proxies},
+                headers=headers
+            )
         except:
             try:
-                r = requests.get(url, timeout=15, proxies={"http": proxies, "https": proxies})
+                r = requests.get(
+                url,
+                timeout=15,
+                proxies={"http": proxies, "https": proxies},
+                headers=headers
+            )
             except:
                 print_a("%s 下载失败! 状态: %s" % (file_name, "请求超时"))
                 return False
@@ -653,7 +668,12 @@ def dload_file_all(max_threads_num, dload_tips, save_path, pars, pics):
             print_i("%s 下载成功! " % file_name)
         return True
 
-    proxies, req_timeout = pars
+    proxies, req_timeout, origin_url, referer_url = pars
+    headers = {
+        "User-Agent": UA,
+        "Origin": origin_url,
+        "Referer": referer_url
+    }
     # 统计下载失败的文件数量
     failed_num = 0
     # 神奇的多线程下载
@@ -667,7 +687,7 @@ def dload_file_all_aio(dload_tips, save_path, pars, pics):
     async def request_get(url):
         async with aiohttp.ClientSession() as session:
             try:
-                response = await session.get(url, timeout=req_timeout, proxy=proxies)
+                response = await session.get(url, timeout=req_timeout, proxy=proxies, headers=headers)
                 content = await response.read()
                 return response.status, content
             except asyncio.TimeoutError:
@@ -692,7 +712,12 @@ def dload_file_all_aio(dload_tips, save_path, pars, pics):
             print_i("%s 下载成功! " % file_name)
 
     urls = [c["data-original"] for c in pics]
-    proxies, req_timeout = pars
+    proxies, req_timeout, origin_url, referer_url = pars
+    headers = {
+        "User-Agent": UA,
+        "Origin": origin_url,
+        "Referer": referer_url
+    }
     proxies = "http://" + proxies
     # 统计下载失败的文件数量
     failed_num = 0
